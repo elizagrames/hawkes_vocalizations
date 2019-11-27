@@ -7,10 +7,10 @@ model{
       lambda[i, j] = mu + gamma[i, j]
       
       
-      for (n in 1:maxmemory[i]) {
-        gtmp[i, j, n] = ifelse(history[i, j, n] == 0, 0, alpha * (exp(1) ^ (-beta *
-                                                                              history[i, j, n])))
-      }
+      for (n in 1:maxmemory) {
+        
+          gtmp[i, j, n] = ifelse(history[i, j, n] == 0, 0, alpha * (exp(1) ^ (-beta * history[i, j, n])))
+        }
       
       gamma[i, j] = sum(gtmp[i, j,])
       
@@ -18,29 +18,31 @@ model{
   }
   
   # Priors
-  mu ~ dgamma(0.0001, 0.0001)T(0.0001, 2)
+  mu ~ dgamma(0.0001, 0.0001)T(0.0001, 1)
   
-  alpha ~ dgamma(0.0001, 0.0001)T(0.0001, 2)
+  alpha ~ dgamma(0.0001, 0.0001)T(0.0001, 1)
   
-  beta ~ dgamma(0.0001, 0.0001)T(0.0001, 10)
+  beta ~ dgamma(0.0001, 0.0001)T(0.0001, 5)
   
   # simulation hawkes
   
-  for(i in 1:nsites){
-    for(j in 1:nobs){
-      sim_t[i,j] ~ dpois(lambda[i,j])
+    for(i in 1:nsites){
+      for(j in 1:nobs){
+        sim_t[i,j] ~ dpois(lambda[i,j])
+      }
     }
+    
+  
+  
+    for (i in 1:nsites) {
+      lambda2[i] ~ dgamma(0.0001, 0.0001)T(0.0001, 2)
+      for (j in 1:nobs) {
+        t2[i, j] ~ dpois(lambda2[i])
+      }
+  
+    
   }
-  
-  
-  
   # Regular Poisson model
-  for (i in 1:nsites) {
-    lambda2[i] ~ dgamma(0.0001, 0.0001)T(0.0001, 2)
-    for (j in 1:nobs) {
-      t2[i, j] ~ dpois(lambda2[i])
-    }
-  }
   
   # simulation of poisson
   
@@ -48,6 +50,6 @@ model{
     for(j in 1:nobs){
       sim_t2[i,j] ~ dpois(lambda2[i])
       
-    }
   }
 }
+} 

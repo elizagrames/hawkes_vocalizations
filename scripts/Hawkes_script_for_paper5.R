@@ -1,6 +1,6 @@
 rm(list = ls())
 library(R2jags)
-
+setwd("C:/Users/Elphick Lab/Documents/Hawkes/")
 #### FUNCTIONS ####
 clean_times <- function(dat, starttime = NULL) {
   for (m in 1:ncol(dat)) {
@@ -69,7 +69,8 @@ clean_differences <- function(alltimediff) {
 
 
 cut_extra <- function(alltimediff) {
-  cutoff <- as.numeric(quantile(alltimediff[alltimediff > 0], c(0, .5))[2])
+  cutoff <-
+    as.numeric(quantile(alltimediff[alltimediff > 0], c(0, .5))[2])
   timecut <- alltimediff
   timecut[timecut == 0] <- NA
   timecut[timecut <= cutoff - 1] <- 1
@@ -154,7 +155,7 @@ make_history <- function(history, memories, maxmemory) {
   }
   
   
-  myarray <- array(all_mats, dim = c(nrow(history), ncol(history), maxmemory))
+  myarray <- array(all_mats, dim = c(ncol(oven), 961, maxmemory))
   
   history <- myarray
   if (any(is.na(history))) {
@@ -216,99 +217,74 @@ too_old <-
 
 nsites <- length(sites)
 
+times <- array(dim=c(5, 959, nsites))
+currentdiffs <- array(dim=c(91, 5, nsites))
+maxmemories <- array(dim=c(nsites))
+history <- array(dim=c(164, 961, 92, nsites))
+maxmem <- 92
 
-for(s in 8:nsites){
+for(s in 1:nsites){
   
   t <- t(all_events[, which(colnames(all_events) == sites[s])])
+  removals <- c()
+  if(dim(t)[1]==6){
+    removals <- which.min(rowSums(t))
+    t <- t[-removals,]
+  } else if(dim(t)[1]==7){
+    removals <- order(rowSums(t))[1:2]
+    t <- t[-removals,]
+  } else{
+    removals <- 8
+  }
   
+  times[,,s] <- t
   
-  currentdiffs <-
-    alltimediff[, which(colnames(oven_times) == sites[s])]
+  currentdiffs[,,s] <-
+    alltimediff[, which(colnames(oven_times) == sites[s])][,-removals]
   
   memories <- find_marbles(t,
-                           differences = currentdiffs,
+                           differences = currentdiffs[,,s],
                            min_events = 19,
                            cutoff = too_old)
-  maxmem <- find_max(memories)
+  maxmemories[s] <- find_max(memories)
 
   memories.plus <- inflate_memories(memories, maxmem)
-history <- make_history(t, memories.plus, maxmem)
+history[,,,s] <- make_history(t, memories.plus, maxmem)
 
-jags.data <- list(
-  t = t,
-  t2=t,
-  history = history,
-  maxmemory = maxmem,
-  nobs = dim(t)[2],
-  nsites = dim(t)[1]
-)
-
-site_model <- jags.parallel(
-  data = jags.data,
-  parameters.to.save = c(
-    "sim_t",
-    "lambda",
-    "lambda2",
-    "sim_t2",
-    "alpha",
-    "beta",
-    "gamma",
-    "mu"
-  ),
-  model.file = "./scripts/JAGS_model.R",
-  n.chains = 3,
-  n.iter = 3000,
-  n.burnin = 500,
-  n.thin = 3
-)
-filename <- paste("./output/", gsub("/", "",sites[s]), ".RData", sep="")
-save(site_model, file = filename)
-rm(t, history, maxmem, memories.plus, currentdiffs, memories, site_model)
   }
 
   # changed to .0001 per simulation and Congdon (2014)
  
 
+  jags.data <- list(
+    t = times,
+    t2=times,
+    history = history,
+    maxmemory = maxmem,
+    nobs = dim(times)[2],
+    nsites = dim(times)[1],
+    chaos=dim(times)[3]
+  )
   
+  site_model <- jags.parallel(
+    data = jags.data,
+    parameters.to.save = c(
+      "sim_t",
+      "lambda",
+      "lambda2",
+      "sim_t2",
+      "alpha",
+      "beta",
+      "gamma",
+      "mu"
+    ),
+    model.file = "./scripts/JAGS_model5.R",
+    n.chains = 3,
+    n.iter = 5000,
+    n.burnin = 2000,
+    n.thin = 5
+  )
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-###### AFTERWARDS #####
-# yay it runs
-
-sim_t <- site_model$BUGSoutput$sims.list$sim_t
-sim_t2 <- site_model$BUGSoutput$sims.list$sim_t2
-
-simT <- array(dim = c(7, 959))
-
-for (i in 1:nrow(simT)) {
-  for (j in 1:ncol(simT)) {
-    simT[i, j] <- rbinom(1, 1, mean(sim_t[, i, j]))
-    
-  }
-}
-
-simT2 <- array(dim = c(7, 959))
-
-for (i in 1:nrow(simT)) {
-  for (j in 1:ncol(simT)) {
-    simT2[i, j] <- rbinom(1, 1, mean(sim_t2[, i, j]))
-    
-  }
-}
-
-hp <- simT - t
-pp <- simT2 - t
+  setwd("E:/")
+  save(site_model, file = "./megamodel.RData")
+  

@@ -161,7 +161,6 @@ make_history <- function(history, memories, maxmemory) {
     history[is.na(history)] <- 0
   }
   
-  
   return(history)
 }
 
@@ -214,10 +213,10 @@ too_old <-
 
 # make a big array of stuff
 
-nsites <- length(sites)
+nfrags <- length(sites)
 
 
-for(s in 8:nsites){
+for(s in 1:nfrags){
   
   t <- t(all_events[, which(colnames(all_events) == sites[s])])
   
@@ -257,11 +256,11 @@ site_model <- jags.parallel(
   ),
   model.file = "./scripts/JAGS_model.R",
   n.chains = 3,
-  n.iter = 3000,
-  n.burnin = 500,
-  n.thin = 3
+  n.iter = 6000,
+  n.burnin = 1500,
+  n.thin = 5
 )
-filename <- paste("./output/", gsub("/", "",sites[s]), ".RData", sep="")
+filename <- paste("./output/fixed_i/", gsub("/", "",sites[s]), ".RData", sep="")
 save(site_model, file = filename)
 rm(t, history, maxmem, memories.plus, currentdiffs, memories, site_model)
   }
@@ -270,45 +269,11 @@ rm(t, history, maxmem, memories.plus, currentdiffs, memories, site_model)
  
 
   
-  
+load("./output/fixed_i/Babcock_6222017.RData")
+
+x <- site_model$BUGSoutput$summary
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-###### AFTERWARDS #####
 # yay it runs
 
-sim_t <- site_model$BUGSoutput$sims.list$sim_t
-sim_t2 <- site_model$BUGSoutput$sims.list$sim_t2
 
-simT <- array(dim = c(7, 959))
-
-for (i in 1:nrow(simT)) {
-  for (j in 1:ncol(simT)) {
-    simT[i, j] <- rbinom(1, 1, mean(sim_t[, i, j]))
-    
-  }
-}
-
-simT2 <- array(dim = c(7, 959))
-
-for (i in 1:nrow(simT)) {
-  for (j in 1:ncol(simT)) {
-    simT2[i, j] <- rbinom(1, 1, mean(sim_t2[, i, j]))
-    
-  }
-}
-
-hp <- simT - t
-pp <- simT2 - t

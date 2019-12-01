@@ -256,23 +256,17 @@ site_model <- jags.parallel(
   ),
   model.file = "./scripts/JAGS_model.R",
   n.chains = 3,
-  n.iter = 6000,
-  n.burnin = 1500,
-  n.thin = 5
+  n.iter = 3000,
+  n.burnin = 1000,
+  n.thin = 3
 )
-filename <- paste("./output/fixed_i/", gsub("/", "",sites[s]), ".RData", sep="")
+filename <- paste("./output/", gsub("/", "",sites[s]), ".RData", sep="")
 save(site_model, file = filename)
 rm(t, history, maxmem, memories.plus, currentdiffs, memories, site_model)
   }
 
   # changed to .0001 per simulation and Congdon (2014)
  
-
-  
-load("./output/fixed_i/Babcock_6222017.RData")
-
-x <- site_model$BUGSoutput$summary
-
 
 # yay it runs
 

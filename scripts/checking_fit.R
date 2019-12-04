@@ -1,4 +1,4 @@
-files <- paste("./output/", list.files("./output/"), sep="")
+files <- paste("./output/community/", list.files("./output/community/"), sep="")
 i <- 0
 
 i <- i+1
@@ -6,16 +6,22 @@ load(files[i])
 params <- site_model$BUGSoutput$summary
 round(head(params, 20),4)
 type <- substr(rownames(params), 1, 5)
-only_these <- which(type!="sim_t")
-hist(params[only_these,8], main=files[i])
-MCMCvis::MCMCtrace(site_model, params=c("alpha", "beta", "mu"), pdf=FALSE)
+not_these <- which(type=="sim_t"| type=="gamma")
+hist(params[-not_these,8], main=files[i])
+MCMCvis::MCMCtrace(site_model, params=c("alpha", "beta", "mu", "lambda2"), pdf=FALSE)
 
-params[which(params[only_these,8]>1.1),8]
+params[which(params[-not_these,8]>1.1),8]
 dev.off()
 
 
 ## BAD MODELS
+# Nye Holman Md is fine in terms of Rhat, but has a couple wonky sections of alpha and beta
+## I am going to drop this site from the analysis because alpha and beta are verging on bimodal
+# Rockville Md has not converged and is so poorly fit that it seems unlikely it will; likely a data issue
+# Rockville Sm has also not converged; Bolton birds are weird
+bad_files <- c(1)
 
+##### ESTIMATED EVENTS ######
 ci_counts <- function(hawk, pois, t){
   nsims <- dim(hawk)[1]
   nsites <- dim(hawk)[2]
@@ -23,8 +29,8 @@ ci_counts <- function(hawk, pois, t){
   tmp.h <- tmp.p <- array(dim=c(nsims, nsites))
   for(s in 1:nsims){
     for(i in 1:nsites){
-      tmp.h[s,i] <- length(which(hawk[s,i,]>0))
-      tmp.p[s,i] <- length(which(pois[s,i,]>0))
+      tmp.h[s,i] <- length(which(hawk[s,i,]>0)) - sum(t[i,])
+      tmp.p[s,i] <- length(which(pois[s,i,]>0)) - sum(t[i,])
     }
   }
   
@@ -33,12 +39,11 @@ ci_counts <- function(hawk, pois, t){
   pestimates <- apply(tmp.p, 2, mean)
   pest.ci <- apply(tmp.p, 2, quantile, c(0.025, 0.975))
   counts <- rowSums(t)
-  tbl <- round(cbind(counts, hestimates, pestimates),2)
-  colnames(tbl) <- c("obs", "hawkes", "poisson")
+  tbl <- round(cbind(counts, hest.ci[1,], hestimates, hest.ci[2,], pest.ci[1,], pestimates, pest.ci[2,]),2)
+  colnames(tbl) <- c("obs", "h.low", "hawkes", "h.up", "p.low", "poisson", "p.up")
   return(tbl)
 }
 
-bad_files <- c()
 sites <- sites[-bad_files]
 files <- paste("./output/", list.files("./output/"), sep="")
 files <- files[-bad_files]
@@ -51,6 +56,132 @@ hawk <- site_model$BUGSoutput$sims.list$sim_t
 pois <- site_model$BUGSoutput$sims.list$sim_t2
 t <- t(all_events[, which(colnames(all_events) == sites[i])])
 
-table_1 <- ci_counts(hawk, pois, t)
+
+table_1 <- as.data.frame(ci_counts(hawk, pois, t))
+table_1 <- table_1[order(table_1$obs),]
+
+table_1$obs <- rep(0,  nrow(table_1))
+means <- apply(table_1, 2, mean)
+
+col1 <- RColorBrewer::brewer.pal(11,"Spectral")[1]
+col2 <- RColorBrewer::brewer.pal(11,"Spectral")[10]
+
+midpoints <- as.numeric(rbind(table_1$hawkes, table_1$poisson, rep(NA, nrow(table_1))))
+li <- as.numeric(rbind(table_1$h.low, table_1$p.low, rep(NA, nrow(table_1))))
+ui <- as.numeric(rbind(table_1$h.up, table_1$p.up, rep(NA, nrow(table_1))))
+plot(midpoints, col=c(col1, col2, "white"), pch=c(16,15,1), cex=2, las=1, 
+     ylim=c(-20,30), xlim=c(0,nrow(table_1)*3+2))
+abline(h=0, lty=2, lwd=3)
+arrows(x0 = seq(1, nrow(table_1)*3,1), y0 = li, x1 = seq(1, nrow(table_1)*3,1), y1 = ui,
+       col=c(col1, col2, "white"), angle=90, length=.07, code = 3, lwd=2)
+points(nrow(table_1)*3+1,means['hawkes'], pch=16,cex=2, col=col1)
+points(nrow(table_1)*3+2,means['poisson'], pch=15,cex=2, col=col2)
+
+arrows(x0 = nrow(table_1)*3+1, y0 = means['h.low'], x1 = nrow(table_1)*3+1, 
+       y1 = means['h.up'],
+       col=col1, angle=90, length=.07, code = 3, lwd=2)
+
+arrows(x0 = nrow(table_1)*3+2, y0 = means['p.low'], x1 = nrow(table_1)*3+2, 
+       y1 = means['p.up'],
+       col=col2, angle=90, length=.07, code = 3, lwd=2)
+
+#abline(v=seq(3, 23.5, 3), lty=2)
 
 
+##### CORRESPONDANCE ####
+mcc <- function(tp, tn, fp, fn){
+  ((tp*tn) - (fp*fn))/(sqrt(tp+fp)*sqrt(tp+fn)*sqrt(tn+fp)*sqrt(tn+fn))
+}
+
+hawk <- site_model$BUGSoutput$sims.list$sim_t
+pois <- site_model$BUGSoutput$sims.list$sim_t2
+t <- t(all_events[, which(colnames(all_events) == sites[i])])
+
+
+calculate_props <- function(hawk, pois, t){
+  nsims <- dim(hawk)[1]
+  nsites <- dim(hawk)[2]
+  nobs <- dim(hawk)[3]
+  
+  tmp.h <- tmp.p <- diffph <- array(dim=c(nsims, nsites))
+  for(s in 1:nsims){
+    for(i in 1:nsites){
+        obs.e <- which(t[i,]>0)
+        window <- obs.e
+        for(m in 1:length(obs.e)){
+          window <- append(window, obs.e[m]+1)
+          window <- append(window, obs.e[m]-1)
+          window <- append(window, obs.e[m]+2)
+          window <- append(window, obs.e[m]-2)
+          window <- append(window, obs.e[m]+3)
+          window <- append(window, obs.e[m]-3)
+          }
+        hawk.pos <- which(hawk[s,i,]>0)
+        hawk.neg <- which(hawk[s,i,]==0)
+        
+        pois.pos <- which(pois[s,i,]>0)
+        pois.neg <- which(hawk[s,i,]==0)
+        
+        obs.pos <- obs.e
+        obs.neg <- which(t[i,]==0)
+        
+        tp.h <- sum(hawk.pos %in% window) 
+        tn.h <- sum(hawk.neg %in% obs.neg)
+        fp.h <- sum((hawk.pos %in% window)!=TRUE)
+        fn.h <- sum(hawk.neg %in% obs.pos)
+
+        tp.p <- sum(pois.pos %in% window) 
+        tn.p <- sum(pois.neg %in% obs.neg)
+        fp.p <- sum((pois.pos %in% window)!=TRUE)
+        fn.p <- sum(pois.neg %in% obs.pos)
+        
+        tmp.h[s,i] <- mcc(tp.h, tn.h, fp.h, fn.h)
+        tmp.p[s,i] <- mcc(tp.p, tn.p, fp.p, fn.p)
+        diffph[s,i] <- tmp.h[s,i] - tmp.p[s,i]
+        
+    }
+  }
+  tmp.h[is.na(tmp.h)] <- NA
+  tmp.p[is.na(tmp.p)] <- NA
+
+  hestimates <- apply(tmp.h, 2, mean, na.rm=TRUE)
+
+  hest.ci <- apply(tmp.h, 2, quantile, c(0.025, 0.975), na.rm=TRUE)
+  pestimates <- apply(tmp.p, 2, mean, na.rm=TRUE)
+  pest.ci <- apply(tmp.p, 2, quantile, c(0.025, 0.975), na.rm=TRUE)
+  destimates <- apply(diffph, 2, mean, na.rm=TRUE)
+  dest.ci <- apply(diffph, 2, quantile, c(0.025, 0.975), na.rm=TRUE)
+  
+  tbl <- cbind(hest.ci[1,], hestimates, hest.ci[2,], 
+               pest.ci[1,], pestimates, pest.ci[2,],
+               dest.ci[1,], destimates, dest.ci[2,])
+  colnames(tbl) <- c("h.low", "hawkes", "h.up", 
+                     "p.low", "poisson", "p.up",
+                     "d.low", "diff", "d.up")
+  return(tbl)
+}
+
+z3 <- calculate_props(hawk, pois, t)
+table_1 <- as.data.frame(z3)
+means <- apply(table_1, 2, mean)
+
+midpoints <- as.numeric(rbind(table_1$hawkes, table_1$poisson, rep(NA, nrow(table_1))))
+li <- as.numeric(rbind(table_1$h.low, table_1$p.low, rep(NA, nrow(table_1))))
+ui <- as.numeric(rbind(table_1$h.up, table_1$p.up, rep(NA, nrow(table_1))))
+plot(midpoints, col=c(col1, col2, "white"), pch=c(16,15, 1), 
+     cex=2, las=1, xlim=c(0,nrow(table_1)*3+2), ylim=c(-.01,.5))
+abline(h=0, lty=2, lwd=3)
+arrows(x0 = seq(1, nrow(table_1)*3,1), y0 = li, x1 = seq(1, nrow(table_1)*3,1), y1 = ui,
+       col=c(col1, col2, "white"), angle=90, length=.07, code = 3, lwd=2)
+points(nrow(table_1)*3+1,means['hawkes'], pch=16,cex=2, col=col1)
+points(nrow(table_1)*3+2,means['poisson'], pch=15,cex=2, col=col2)
+
+arrows(x0 = nrow(table_1)*3+1, y0 = means['h.low'], x1 = nrow(table_1)*3+1, 
+       y1 = means['h.up'],
+       col=col1, angle=90, length=.07, code = 3, lwd=2)
+
+arrows(x0 = nrow(table_1)*3+2, y0 = means['p.low'], x1 = nrow(table_1)*3+2, 
+       y1 = means['p.up'],
+       col=col2, angle=90, length=.07, code = 3, lwd=2)
+
+#abline(v=seq(3, 23.5, 3), lty=2)

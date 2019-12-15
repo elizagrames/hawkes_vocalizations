@@ -1,10 +1,11 @@
 files <- paste("./output/community/", list.files("./output/community/"), sep="")
 i <- 0
 
+par(mfrow=c(1,1))
 i <- i+1
 load(files[i])
 params <- site_model$BUGSoutput$summary
-round(head(params, 20),4)
+round(head(params, 10),4)
 type <- substr(rownames(params), 1, 5)
 not_these <- which(type=="sim_t"| type=="gamma")
 hist(params[-not_these,8], main=files[i])
@@ -15,11 +16,10 @@ dev.off()
 
 
 ## BAD MODELS
-# Nye Holman Md is fine in terms of Rhat, but has a couple wonky sections of alpha and beta
-## I am going to drop this site from the analysis because alpha and beta are verging on bimodal
-# Rockville Md has not converged and is so poorly fit that it seems unlikely it will; likely a data issue
-# Rockville Sm has also not converged; Bolton birds are weird
-bad_files <- c(1)
+# dropping BBL because mu is verging on bimodal
+# dropping BSM because rhat is all over the place and chains have not converged visually for mu, alpha, or beta
+# dropping SGL because wow those chains are all over the place
+bad_files <- c(1, 3, 18)
 
 ##### ESTIMATED EVENTS ######
 ci_counts <- function(hawk, pois, t){
@@ -44,14 +44,16 @@ ci_counts <- function(hawk, pois, t){
   return(tbl)
 }
 
+sites <- sites[-1] # oops i forgot to run babcock
+
 sites <- sites[-bad_files]
-files <- paste("./output/", list.files("./output/"), sep="")
+files <- paste("./output/community/", list.files("./output/community/"), sep="")
 files <- files[-bad_files]
 i <- 0
 
 i <- i+1
-load(files[i])
 
+load(files[i])
 hawk <- site_model$BUGSoutput$sims.list$sim_t
 pois <- site_model$BUGSoutput$sims.list$sim_t2
 t <- t(all_events[, which(colnames(all_events) == sites[i])])
@@ -69,8 +71,8 @@ col2 <- RColorBrewer::brewer.pal(11,"Spectral")[10]
 midpoints <- as.numeric(rbind(table_1$hawkes, table_1$poisson, rep(NA, nrow(table_1))))
 li <- as.numeric(rbind(table_1$h.low, table_1$p.low, rep(NA, nrow(table_1))))
 ui <- as.numeric(rbind(table_1$h.up, table_1$p.up, rep(NA, nrow(table_1))))
-plot(midpoints, col=c(col1, col2, "white"), pch=c(16,15,1), cex=2, las=1, 
-     ylim=c(-20,30), xlim=c(0,nrow(table_1)*3+2))
+plot(midpoints, col=c(col1, col2, "white"), pch=c(16,15,1), cex=2, las=1, xlim=c(0,nrow(table_1)*3+2),
+     ylim=c(min(li[!is.na(li)]), max(ui[!is.na(ui)])))
 abline(h=0, lty=2, lwd=3)
 arrows(x0 = seq(1, nrow(table_1)*3,1), y0 = li, x1 = seq(1, nrow(table_1)*3,1), y1 = ui,
        col=c(col1, col2, "white"), angle=90, length=.07, code = 3, lwd=2)
@@ -100,21 +102,17 @@ t <- t(all_events[, which(colnames(all_events) == sites[i])])
 
 calculate_props <- function(hawk, pois, t){
   nsims <- dim(hawk)[1]
-  nsites <- dim(hawk)[2]
+  nsites <- 2
   nobs <- dim(hawk)[3]
   
   tmp.h <- tmp.p <- diffph <- array(dim=c(nsims, nsites))
   for(s in 1:nsims){
-    for(i in 1:nsites){
+    for(i in 2:nsites){
         obs.e <- which(t[i,]>0)
         window <- obs.e
         for(m in 1:length(obs.e)){
           window <- append(window, obs.e[m]+1)
           window <- append(window, obs.e[m]-1)
-          window <- append(window, obs.e[m]+2)
-          window <- append(window, obs.e[m]-2)
-          window <- append(window, obs.e[m]+3)
-          window <- append(window, obs.e[m]-3)
           }
         hawk.pos <- which(hawk[s,i,]>0)
         hawk.neg <- which(hawk[s,i,]==0)
@@ -184,4 +182,60 @@ arrows(x0 = nrow(table_1)*3+2, y0 = means['p.low'], x1 = nrow(table_1)*3+2,
        y1 = means['p.up'],
        col=col2, angle=90, length=.07, code = 3, lwd=2)
 
-#abline(v=seq(3, 23.5, 3), lty=2)
+
+############# MU vs GAMMA #####
+
+# doing good at estimating the total number in both cases
+# doing okay-ish with the times in some cases
+# what exta info do we get from hawkes?
+# for some sites, we can only fit poisson because gamma has to be fixed to zero when there is no history
+# only makes sense to compare mu and gamma when gamma is not forcibly fixed by me
+
+alpha <- site_model$BUGSoutput$sims.list$alpha
+beta <- site_model$BUGSoutput$sims.list$beta
+mu <- site_model$BUGSoutput$sims.list$mu
+gamma <- site_model$BUGSoutput$sims.list$gamma
+lambda <- site_model$BUGSoutput$sims.list$lambda
+
+condit <- c()
+for(p in 1:dim(mu)[2]){
+  if(mean(gamma[,p,])!=0){
+    condit[p] <- mean(gamma[,p,])/mean(lambda[,p,])
+  } else{condit[p] <- NA}
+}
+
+plot(density(condit[!is.na(condit)]))
+
+ci_condit <- function(gamma, lambda){
+  nsims <- dim(gamma)[1]
+  nsites <- dim(gamma)[2]
+  
+  tmp <- array(dim=c(nsims, nsites))
+  for(s in 1:nsims){
+    for(i in 1:nsites){
+      if(mean(gamma[s,i,])!=0){
+        tmp[s,i] <- mean(gamma[s,i,])/mean(lambda[s,i,])
+      } else{tmp[s,i] <- NA}
+    }
+  }
+  
+  gestimates <- apply(tmp, 2, mean)
+  gest.ci <- apply(tmp, 2, quantile, c(0.025, 0.975), na.rm=TRUE)
+  tbl <- as.data.frame(cbind(gest.ci[1,], gestimates, gest.ci[2,]))
+  colnames(tbl) <- c("low", "mean", "up")
+  return(tbl)
+}
+
+table_c <- ci_condit(gamma, lambda)
+table_c <- table_c[-which(is.na(table_c[,1])),]
+
+
+
+
+
+
+
+
+
+
+

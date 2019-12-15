@@ -1,4 +1,3 @@
-rm(list = ls())
 library(R2jags)
 
 #### FUNCTIONS ####
@@ -192,8 +191,6 @@ oven_times <- clean_times(oven[-c(1:5),], starttime = starts)
 all_events <- apply(oven_times, 2, get_events)
 alltimediff <- apply(all_events, 2, calculate_timediff)
 
-
-
 # find the maximum number of timestamps in a recording
 
 alltimediff <- as.matrix(clean_differences(alltimediff))
@@ -216,7 +213,7 @@ too_old <-
 nfrags <- length(sites)
 
 
-for(s in 1:nfrags){
+for(i in 2:nfrags){
   
   t <- t(all_events[, which(colnames(all_events) == sites[s])])
   
@@ -232,6 +229,7 @@ for(s in 1:nfrags){
 
   memories.plus <- inflate_memories(memories, maxmem)
 history <- make_history(t, memories.plus, maxmem)
+
 
 jags.data <- list(
   t = t,
@@ -254,13 +252,13 @@ site_model <- jags.parallel(
     "gamma",
     "mu"
   ),
-  model.file = "./scripts/JAGS_model.R",
+  model.file = "./scripts/JAGS_model_community.R",
   n.chains = 3,
   n.iter = 3000,
   n.burnin = 1000,
   n.thin = 3
 )
-filename <- paste("./output/", gsub("/", "",sites[s]), ".RData", sep="")
+filename <- paste("./output/community/", gsub("/", "",sites[s]), ".RData", sep="")
 save(site_model, file = filename)
 rm(t, history, maxmem, memories.plus, currentdiffs, memories, site_model)
   }

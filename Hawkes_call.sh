@@ -12,6 +12,7 @@
 #SBATCH -e myscript_%j.err
 
 echo `hostname`
+cd /home/FCAM/egrames/hawkes_vocalizations/
 module load R/3.5.1
 module load JAGS/4.3.0
 Rscript scripts/Hawkes_script_for_paper.R

@@ -1,5 +1,5 @@
 library(R2jags)
-
+options(warn=-1)
 #### FUNCTIONS ####
 clean_times <- function(dat, starttime = NULL) {
   for (m in 1:ncol(dat)) {
@@ -213,7 +213,7 @@ too_old <-
 nfrags <- length(sites)
 
 
-for(i in 2:nfrags){
+for(s in 1:nfrags){
   
   t <- t(all_events[, which(colnames(all_events) == sites[s])])
   
@@ -240,7 +240,7 @@ jags.data <- list(
   nsites = dim(t)[1]
 )
 
-site_model <- jags.parallel(
+site_model <- jags(
   data = jags.data,
   parameters.to.save = c(
     "sim_t",

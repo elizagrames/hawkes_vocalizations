@@ -1,0 +1,22 @@
+Loading required package: rjags
+Loading required package: coda
+Linked to JAGS 4.3.0
+Loaded modules: basemod,bugs
+
+Attaching package: ‘R2jags’
+
+The following object is masked from ‘package:coda’:
+
+    traceplot
+
+Warning messages:
+1: In clean_times(oven[-c(1:5), ], starttime = starts) :
+  NAs introduced by coercion
+2: In clean_times(oven[-c(1:5), ], starttime = starts) :
+  NAs introduced by coercion
+3: In clean_times(oven[-c(1:5), ], starttime = starts) :
+  NAs introduced by coercion
+Error in checkForRemoteErrors(lapply(cl, recvResult)) : 
+  3 nodes produced errors; first error: Cannot open model file "../scripts/JAGS_model_community.R"
+Calls: jags.parallel ... tryCatchList -> clusterCall -> checkForRemoteErrors
+Execution halted

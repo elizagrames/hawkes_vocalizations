@@ -1,0 +1,17 @@
+Loading required package: rjags
+Loading required package: coda
+Linked to JAGS 4.3.0
+Loaded modules: basemod,bugs
+
+Attaching package: ‘R2jags’
+
+The following object is masked from ‘package:coda’:
+
+    traceplot
+
+module glm loaded
+Error in file(modfile, "rt") : cannot open the connection
+Error in jags.model(model.file, data = data, inits = init.values, n.chains = n.chains,  : 
+  Cannot open model file "../scripts/JAGS_model_community.R"
+Calls: jags -> jags.model
+Execution halted

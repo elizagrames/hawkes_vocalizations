@@ -1,0 +1,17 @@
+Loading required package: rjags
+Loading required package: coda
+Linked to JAGS 4.3.0
+Loaded modules: basemod,bugs
+
+Attaching package: ‘R2jags’
+
+The following object is masked from ‘package:coda’:
+
+    traceplot
+
+Error in file(file, "rt") : cannot open the connection
+Calls: read.csv -> read.table -> file
+In addition: Warning message:
+In file(file, "rt") :
+  cannot open file '../data/Ovenbird point count recordings THIS ONE - Timing data.csv': No such file or directory
+Execution halted

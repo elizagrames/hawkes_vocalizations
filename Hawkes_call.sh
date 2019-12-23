@@ -14,7 +14,6 @@
 echo `hostname`
 module load R/3.5.1
 module load JAGS/4.3.0
-cd hawkes_vocalizations/scripts/
-Rscript Hawkes_script_for_paper.R
+Rscript scripts/Hawkes_script_for_paper.R
 
 

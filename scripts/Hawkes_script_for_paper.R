@@ -232,8 +232,10 @@ history <- make_history(t, memories.plus, maxmem)
 
 
 jags.data <- list(
-  t = t,
-  t2=t,
+  t=t,
+  tM=t,
+  tP=t,
+  tW=t,
   history = history,
   maxmemory = maxmem,
   nobs = dim(t)[2],
@@ -243,19 +245,25 @@ jags.data <- list(
 site_model <- jags(
   data = jags.data,
   parameters.to.save = c(
-    "sim_t",
-    "lambda",
-    "lambda2",
-    "sim_t2",
-    "alpha",
-    "beta",
+    "mu",
+    "lambdaH",
     "gamma",
-    "mu"
+    "alpha", 
+    "beta", 
+    "sim_tH",
+    "lambdaM",
+    "sim_tM",
+    "lambdaP",
+    "sim_tP",
+    "muW",
+    "lambdaW",
+    "gammaW",
+    "sim_tW"
   ),
   model.file = "./scripts/JAGS_model_community.R",
   n.chains = 3,
-  n.iter = 3000,
-  n.burnin = 1000,
+  n.iter = 5000,
+  n.burnin = 2000,
   n.thin = 3
 )
 filename <- paste("./output/community/", gsub("/", "",sites[s]), ".RData", sep="")

@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=Hawkes_process
+#SBATCH --job-name=Hawkes_output
 #SBATCH -N 1
 #SBATCH -n 1
 #SBATCH -c 1

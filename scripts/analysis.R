@@ -109,9 +109,7 @@ params <- c("mu",
             "alpha", 
             "beta", 
             "lambdaM",
-            "lambdaP",
-            "muW",
-            "gammaW")
+            "lambdaP")
 
 condits <- events <- list(); length(condits) <- length(events) <- length(sites)
 all_events <- read.csv("all_events.csv")
@@ -119,7 +117,7 @@ all_events <- read.csv("all_events.csv")
 for(i in 1:length(filenames)){
   load(filenames[i])
   estimates <- site_model$BUGSoutput$summary
-  types <- strsplit(rownames(estimates, "\\["))[[1]][1]
+  types <- strsplit(rownames(estimates), "\\[")[[1]][1]
   rhats <- estimates[types %in% params, 'Rhat']
   if(any(rhats>1.1)){
     tag <- "bad"

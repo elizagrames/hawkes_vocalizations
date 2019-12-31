@@ -116,7 +116,7 @@ all_events <- read.csv("all_events.csv")
 
 for(z in 2:ncol(all_events)){
 name <- substring(colnames(all_events)[z], nchar(colnames(all_events)[z])-1, nchar(colnames(all_events)[z]))
-if(grepl("\\.", name)){colnames(all_events)[z] <- substring(colnames(all_events)[z], 1, nchar(colnames(all_events)[z])-2}
+if(grepl("\\.", name)){colnames(all_events)[z] <- substring(colnames(all_events)[z], 1, nchar(colnames(all_events)[z])-2)}
 }
 
 colnames(all_events) <- gsub("\\.", "", colnames(all_events))

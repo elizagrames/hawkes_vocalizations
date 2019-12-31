@@ -15,7 +15,8 @@ ci_counts <- function(mod, truth){
   counts <- rowSums(truth)
   tbl <- cbind(counts, mod.ci[1,], mod.mean, mod.ci[2,])
   colnames(tbl) <- c("obs", "li", "x", "ui")
-  return(tbl)
+  output <- list(tbl, tmp.mod)
+  return(output)
 }
 
 mcc <- function(tp, tn, fp, fn){
@@ -57,8 +58,8 @@ calculate_props <- function(mod, truth, size){
   counts <- rowSums(truth)
   tbl <- cbind(mod.ci[1,], mod.mean, mod.ci[2,])
   colnames(tbl) <- c("li", "x", "ui")
-  
-  return(tbl)
+  output <- list(tbl, tmp)
+  return(output)
 }
 
 ci_condit <- function(param, lambda, mu=TRUE){
@@ -90,7 +91,8 @@ if(mu==TRUE){
   gest.ci <- apply(tmp, 2, quantile, c(0.025, 0.975), na.rm=TRUE)
   tbl <- as.data.frame(cbind(gest.ci[1,], gestimates, gest.ci[2,]))
   colnames(tbl) <- c("li", "x", "ui")
-  return(tbl)
+  output <- list(tbl, tmp)
+  return(output)
 }
 
 #### 0: Load in the data ####

@@ -111,7 +111,6 @@ params <- c("mu",
             "lambdaM",
             "lambdaP")
 
-condits <- events <- list(); length(condits) <- length(events) <- length(sites)
 all_events <- read.csv("all_events.csv")
 
 for(z in 2:ncol(all_events)){
@@ -119,12 +118,12 @@ name <- substring(colnames(all_events)[z], nchar(colnames(all_events)[z])-1, nch
 if(grepl("\\.", name)){colnames(all_events)[z] <- substring(colnames(all_events)[z], 1, nchar(colnames(all_events)[z])-2)}
 }
 
-colnames(all_events) <- gsub("\\.", "", colnames(all_events))
-
+colnames(all_events) <- gsub("\\.", " ", colnames(all_events))
+library(tm)
 for(i in 1:length(filenames)){
   load(filenames[i])
   estimates <- site_model$BUGSoutput$summary
-  types <- strsplit(rownames(estimates), "\\[")[[1]][1]
+  types <- removePunctuation(removeNumbers(rownames(estimates)))
   rhats <- estimates[which(types %in% params), 'Rhat']
   if(any(rhats>1.1)){
     tag <- "bad"
@@ -139,8 +138,8 @@ for(i in 1:length(filenames)){
     eventsM <- ci_counts(site_model$BUGSoutput$sims.list$sim_tM, truth)
     eventsP <- ci_counts(site_model$BUGSoutput$sims.list$sim_tP, truth)
     eventsW <- ci_counts(site_model$BUGSoutput$sims.list$sim_tW, truth)
-    conditsH[[i]] <- ci_condit(param=site_model$BUGSoutput$sims.list$gamma, site_model$BUGSoutput$sims.list$lambdaH, mu=FALSE)
-    conditsW[[i]] <- ci_condit(param=site_model$BUGSoutput$sims.list$gammaW, site_model$BUGSoutput$sims.list$lambdaW, mu=FALSE)
+    conditsH <- ci_condit(param=site_model$BUGSoutput$sims.list$gamma, site_model$BUGSoutput$sims.list$lambdaH, mu=FALSE)
+    conditsW <- ci_condit(param=site_model$BUGSoutput$sims.list$gammaW, site_model$BUGSoutput$sims.list$lambdaW, mu=FALSE)
     
     output <- list(eventsH, eventsM, eventsP, eventsW, conditsH, conditsW)
     save(output, file=paste("./", sites[i], "output_for_plots.RData", sep=""))

@@ -118,7 +118,7 @@ for(i in 1:length(filenames)){
   load(filenames[i])
   estimates <- site_model$BUGSoutput$summary
   types <- strsplit(rownames(estimates), "\\[")[[1]][1]
-  rhats <- estimates[types %in% params, 'Rhat']
+  rhats <- estimates[which(types %in% params), 'Rhat']
   if(any(rhats>1.1)){
     tag <- "bad"
   }else{

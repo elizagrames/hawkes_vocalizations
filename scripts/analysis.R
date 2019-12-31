@@ -114,6 +114,13 @@ params <- c("mu",
 condits <- events <- list(); length(condits) <- length(events) <- length(sites)
 all_events <- read.csv("all_events.csv")
 
+for(z in 2:ncol(all_events)){
+name <- substring(colnames(all_events)[z], nchar(colnames(all_events)[z])-1, nchar(colnames(all_events)[z]))
+if(grepl("\\.", name)){colnames(all_events)[z] <- substring(colnames(all_events)[z], 1, nchar(colnames(all_events)[z])-2}
+}
+
+colnames(all_events) <- gsub("\\.", "", colnames(all_events))
+
 for(i in 1:length(filenames)){
   load(filenames[i])
   estimates <- site_model$BUGSoutput$summary

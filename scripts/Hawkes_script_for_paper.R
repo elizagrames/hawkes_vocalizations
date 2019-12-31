@@ -77,92 +77,6 @@ cut_extra <- function(alltimediff) {
   return(timecut)
 }
 
-find_marbles <-  function(history,differences,min_events = 19,cutoff = 100) {
-    for (i in 1:nrow(history)) {
-      if (i == 1) {
-        memory_list <- list()
-        length(memory_list) <- ncol(history)
-        memories <- list()
-        length(memories) <- nrow(history)
-      }
-      for (j in 1:ncol(history)) {
-        temp <- history[i, c(1:j)]
-        memory <- temp
-        for (n in 1:length(temp)) {
-          if (temp[n] != 0) {
-            memory[n] <- j - temp[n]
-          } else{
-            memory[n] <- 0
-          }
-        }
-        if (any(memory == 0)) {
-          memory <- memory[-which(memory == 0)]
-        }
-        if (length(memory) == 0) {
-          memory <- 0
-        }
-        if (any(rowSums(history) > min_events) == FALSE) {
-          memory <- 0
-        }
-        mindiff <- min(differences[differences[, i] > 0, i])
-        if (mindiff > cutoff) {
-          memory <- 0
-        }
-        memory_list[[j]] <- memory
-      }
-      
-      memories[[i]] <- memory_list
-    }
-    return(memories)
-  }
-
-find_max <- function(memories) {
-  maxmemory <- 0
-  for (i in 1:length(memories)) {
-    memory_list <- memories[[i]]
-    for (j in 1:length(memory_list)) {
-      maxmemory <- max(append(maxmemory, length(memory_list[[j]])))
-    }
-  }
-  return(maxmemory)
-}
-
-inflate_memories <- function(memories, maxmemory) {
-  for (i in 1:length(memories)) {
-    memory_list <- memories[[i]]
-    for (j in 1:length(memory_list)) {
-      if (length(memory_list[[j]]) < maxmemory) {
-        length(memory_list[[j]]) <- maxmemory
-      }
-      memory_list[[j]][which(is.na(memory_list[[j]]))] <- 0
-    }
-    memories[[i]] <- memory_list
-  }
-  return(memories)
-}
-
-make_history <- function(history, memories, maxmemory) {
-  newmat <- matrix(nrow = nrow(history), ncol = ncol(history))
-  all_mats <- c()
-  for (m in 1:maxmemory) {
-    for (i in 1:length(memories)) {
-      for (j in 1:ncol(newmat))
-        newmat[i, j] <- memories[[i]][[j]][m]
-    }
-    all_mats <- append(all_mats, newmat)
-  }
-  
-  
-  myarray <- array(all_mats, dim = c(nrow(history), ncol(history), maxmemory))
-  
-  history <- myarray
-  if (any(is.na(history))) {
-    history[is.na(history)] <- 0
-  }
-  
-  return(history)
-}
-
 
 #### data clean up ####
 # read in and filter data to only recordings with songs
@@ -189,17 +103,17 @@ sites <- names(which(table(sitename) > 4))
 starts <- as.numeric(clean_times(oven[4,]))
 oven_times <- clean_times(oven[-c(1:5),], starttime = starts)
 all_events <- apply(oven_times, 2, get_events)
-alltimediff <- apply(all_events, 2, calculate_timediff)
+#alltimediff <- apply(all_events, 2, calculate_timediff)
 
 # find the maximum number of timestamps in a recording
 
-alltimediff <- as.matrix(clean_differences(alltimediff))
+#alltimediff <- as.matrix(clean_differences(alltimediff))
 
 # ignore time differences that are outside the expected range
 # these are not included in the history
-timecut <- cut_extra(alltimediff)
-too_old <-
-  as.numeric(quantile(alltimediff[alltimediff > 0], c(0, .5))[2])
+#timecut <- cut_extra(alltimediff)
+#too_old <-
+#  as.numeric(quantile(alltimediff[alltimediff > 0], c(0, .5))[2])
 
 ### turn the data from a site into useful stuff
 ### then run the jags model with it
@@ -211,25 +125,37 @@ too_old <-
 # make a big array of stuff
 
 nfrags <- length(sites)
-
+min_events <- 10
+cutoff <- 60
+maxmem <- 60
 
 for(s in 1:nfrags){
   
   t <- t(all_events[, which(colnames(all_events) == sites[s])])
+  i <- 1
+  while(i < dim(t)[1]){
+    if(sum(t[i,])<min_events){
+      t <- t[-i,]
+    }
+    i <- i+1
+  }
   
-  
-  currentdiffs <-
-    alltimediff[, which(colnames(oven_times) == sites[s])]
-  
-  memories <- find_marbles(t,
-                           differences = currentdiffs,
-                           min_events = 19,
-                           cutoff = too_old)
-  maxmem <- find_max(memories)
-
-  memories.plus <- inflate_memories(memories, maxmem)
-history <- make_history(t, memories.plus, maxmem)
-
+  history <- array(dim=c(dim(t)[1], dim(t)[2], maxmem))
+  for(i in 1:dim(t)[1]){
+    
+    for(j in 1:dim(t)[2]){
+      
+      what_happened <- which(t[i,c(1:j)]>0)
+      if(any(what_happened)>0){
+        events <- j - what_happened
+        memories <- events[which(events<cutoff)]
+        }else{memories <- 0}
+        length(memories) <- maxmem
+        memories[is.na(memories)] <- 0
+        
+        history[i,j,] <- memories
+    }
+  }
 
 jags.data <- list(
   t=t,

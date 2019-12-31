@@ -139,8 +139,8 @@ for(i in 1:length(filenames)){
     eventsM <- ci_counts(site_model$BUGSoutput$sims.list$sim_tM, truth)
     eventsP <- ci_counts(site_model$BUGSoutput$sims.list$sim_tP, truth)
     eventsW <- ci_counts(site_model$BUGSoutput$sims.list$sim_tW, truth)
-    conditsH[[i]] <- ci_condit(param=site_model$BUGSoutput$sims.list$gamma, lambdaH, mu=FALSE)
-    conditsW[[i]] <- ci_condit(param=site_model$BUGSoutput$sims.list$gammaW, lambdaW, mu=FALSE)
+    conditsH[[i]] <- ci_condit(param=site_model$BUGSoutput$sims.list$gamma, site_model$BUGSoutput$sims.list$lambdaH, mu=FALSE)
+    conditsW[[i]] <- ci_condit(param=site_model$BUGSoutput$sims.list$gammaW, site_model$BUGSoutput$sims.list$lambdaW, mu=FALSE)
     
     output <- list(eventsH, eventsM, eventsP, eventsW, conditsH, conditsW)
     save(output, file=paste("./", sites[i], "output_for_plots.RData", sep=""))

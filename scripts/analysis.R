@@ -53,8 +53,8 @@ calculate_props <- function(mod, truth, size){
   }
   tmp[is.na(tmp)] <- NA
 
-  mod.mean <- apply(tmp.mod, 2, mean)
-  mod.ci <- apply(tmp.mod, 2, quantile, c(0.025, 0.975))
+  mod.mean <- apply(tmp, 2, mean)
+  mod.ci <- apply(tmp, hawk2, quantile, c(0.025, 0.975))
   counts <- rowSums(truth)
   tbl <- cbind(mod.ci[1,], mod.mean, mod.ci[2,])
   colnames(tbl) <- c("li", "x", "ui")

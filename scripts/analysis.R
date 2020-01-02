@@ -43,10 +43,10 @@ calculate_props <- function(mod, truth, size){
       obs.pos <- obs.e
       obs.neg <- which(truth[i,]==0)
       
-      tp <- sum(hawk.pos %in% window) 
-      tn <- sum(hawk.neg %in% obs.neg)
-      fp <- sum((hawk.pos %in% window)!=TRUE)
-      fn <- sum(hawk.neg %in% obs.pos)
+      tp <- sum(mod.pos %in% window) 
+      tn <- sum(mod.neg %in% obs.neg)
+      fp <- sum((mod.pos %in% window)!=TRUE)
+      fn <- sum(mod.neg %in% obs.pos)
       
       tmp[s,i] <- mcc(tp, tn, fp, fn)
     }

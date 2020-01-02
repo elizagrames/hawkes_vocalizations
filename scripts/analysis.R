@@ -142,8 +142,21 @@ for(i in 1:length(filenames)){
     eventsW <- ci_counts(site_model$BUGSoutput$sims.list$sim_tW, truth)
     conditsH <- ci_condit(param=site_model$BUGSoutput$sims.list$gamma, site_model$BUGSoutput$sims.list$lambdaH, mu=FALSE)
     conditsW <- ci_condit(param=site_model$BUGSoutput$sims.list$gammaW, site_model$BUGSoutput$sims.list$lambdaW, mu=FALSE)
+mccH1 <- calculate_props(site_model$BUGSoutput$sims.list$sim_tH, truth, 1)
+mccH2 <- calculate_props(site_model$BUGSoutput$sims.list$sim_tH, truth, 2)
+mccH3 <- calculate_props(site_model$BUGSoutput$sims.list$sim_tH, truth, 3)
+
+mccP1 <- calculate_props(site_model$BUGSoutput$sims.list$sim_tP, truth, 1)
+mccP2 <- calculate_props(site_model$BUGSoutput$sims.list$sim_tP, truth, 2)
+mccP3 <- calculate_props(site_model$BUGSoutput$sims.list$sim_tP, truth, 3)
+
+mccM1 <- calculate_props(site_model$BUGSoutput$sims.list$sim_tM, truth, 1)
+mccM2 <- calculate_props(site_model$BUGSoutput$sims.list$sim_tM, truth, 2)
+mccM3 <- calculate_props(site_model$BUGSoutput$sims.list$sim_tM, truth, 3)
+
     
-    output <- list(eventsH, eventsM, eventsP, eventsW, conditsH, conditsW)
+    output <- list(eventsH, eventsM, eventsP, eventsW, conditsH, conditsW, mccH1, mccH2, mccH3, mccP1, mccP2, mccP3, mccM1, mccM2, mccM3)
+   names( output) <- c("eventsH", "eventsM", "eventsP", "eventsW", "conditsH", "conditsW", "mccH1", "mccH2", "mccH3", "mccP1", "mccP2", "mccP3", "mccM1","mccM2", "mccM3")
     save(output, file=paste("./", sites[i], "output_for_plots.RData", sep=""))
     rm(truth, eventsH, eventsM, eventsP, eventsW, conditsH, conditsW)
     }

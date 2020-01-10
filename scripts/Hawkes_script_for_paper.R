@@ -80,6 +80,7 @@ cut_extra <- function(alltimediff) {
 
 #### data clean up ####
 # read in and filter data to only recordings with songs
+setwd("~/hawkes_vocalizations/")
 oven <-
   read.csv(
     "./data/Ovenbird point count recordings THIS ONE - Timing data.csv",
@@ -161,7 +162,6 @@ jags.data <- list(
   t=t,
   tM=t,
   tP=t,
-  tW=t,
   history = history,
   maxmemory = maxmem,
   nobs = dim(t)[2],
@@ -180,11 +180,7 @@ site_model <- jags(
     "lambdaM",
     "sim_tM",
     "lambdaP",
-    "sim_tP",
-    "muW",
-    "lambdaW",
-    "gammaW",
-    "sim_tW"
+    "sim_tP"
   ),
   model.file = "./scripts/JAGS_model_community.R",
   n.chains = 3,
@@ -192,7 +188,7 @@ site_model <- jags(
   n.burnin = 2000,
   n.thin = 3
 )
-filename <- paste("./output/community/", gsub("/", "",sites[s]), ".RData", sep="")
+filename <- paste("./output/Jan10/", gsub("/", "",sites[s]), ".RData", sep="")
 save(site_model, file = filename)
 rm(t, history, maxmem, memories.plus, currentdiffs, memories, site_model)
   }

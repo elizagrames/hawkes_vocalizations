@@ -97,8 +97,8 @@ if(mu==TRUE){
 
 #### 0: Load in the data ####
 
-models <- list.files("./output/community/")
-filenames <- paste("./output/community/", models, sep="")
+models <- list.files("./output/Jan10/")
+filenames <- paste("./output/Jan10/", models, sep="")
 filenames <- filenames[which(stringr::str_detect(filenames, "RData"))]
 #filenames <- filenames[-13]
 
@@ -132,16 +132,14 @@ for(i in 1:length(filenames)){
   }else{
     tag <- "good"
   }
-  write.csv(estimates, file=paste("./", sites[i], tag, ".csv", sep=""))
+  write.csv(estimates, file=paste("./cleaned_up/", sites[i], tag, ".csv", sep=""))
 
     if(tag=="good"){
     truth <- t(all_events[, which(colnames(all_events) == sites[i])])
     eventsH <- ci_counts(site_model$BUGSoutput$sims.list$sim_tH, truth)
     eventsM <- ci_counts(site_model$BUGSoutput$sims.list$sim_tM, truth)
     eventsP <- ci_counts(site_model$BUGSoutput$sims.list$sim_tP, truth)
-    eventsW <- ci_counts(site_model$BUGSoutput$sims.list$sim_tW, truth)
     conditsH <- ci_condit(param=site_model$BUGSoutput$sims.list$gamma, site_model$BUGSoutput$sims.list$lambdaH, mu=FALSE)
-    conditsW <- ci_condit(param=site_model$BUGSoutput$sims.list$gammaW, site_model$BUGSoutput$sims.list$lambdaW, mu=FALSE)
 mccH1 <- calculate_props(site_model$BUGSoutput$sims.list$sim_tH, truth, 1)
 mccH2 <- calculate_props(site_model$BUGSoutput$sims.list$sim_tH, truth, 2)
 mccH3 <- calculate_props(site_model$BUGSoutput$sims.list$sim_tH, truth, 3)
@@ -155,10 +153,9 @@ mccM2 <- calculate_props(site_model$BUGSoutput$sims.list$sim_tM, truth, 2)
 mccM3 <- calculate_props(site_model$BUGSoutput$sims.list$sim_tM, truth, 3)
 
     
-    output <- list(eventsH, eventsM, eventsP, eventsW, conditsH, conditsW, mccH1, mccH2, mccH3, mccP1, mccP2, mccP3, mccM1, mccM2, mccM3)
-   names( output) <- c("eventsH", "eventsM", "eventsP", "eventsW", "conditsH", "conditsW", "mccH1", "mccH2", "mccH3", "mccP1", "mccP2", "mccP3", "mccM1","mccM2", "mccM3")
-    save(output, file=paste("./", sites[i], "output_for_plots.RData", sep=""))
-    rm(truth, eventsH, eventsM, eventsP, eventsW, conditsH, conditsW)
+    output <- list(eventsH, eventsM, eventsP, conditsH, mccH1, mccH2, mccH3, mccP1, mccP2, mccP3, mccM1, mccM2, mccM3)
+   names( output) <- c("eventsH", "eventsM", "eventsP", "conditsH", "mccH1", "mccH2", "mccH3", "mccP1", "mccP2", "mccP3", "mccM1","mccM2", "mccM3")
+    save(output, file=paste("./cleaned_up/", sites[i], "output_for_plots.RData", sep=""))
     }
 }
 

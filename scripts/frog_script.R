@@ -178,8 +178,8 @@ site_model <- jags(
   ),
   model.file = "../scripts/JAGS_model_community.R",
   n.chains = 3,
-  n.iter = 500,
-  n.burnin = 200,
+  n.iter = 5000,
+  n.burnin = 2000,
   n.thin = 3
 )
 
@@ -278,8 +278,8 @@ site_model <- jags(
   ),
   model.file = "../scripts/JAGS_model_community.R",
   n.chains = 3,
-  n.iter = 500,
-  n.burnin = 200,
+  n.iter = 5000,
+  n.burnin = 2000,
   n.thin = 3
 )
 

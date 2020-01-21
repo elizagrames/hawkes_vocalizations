@@ -95,7 +95,7 @@ for(i in 1:length(files)){
     bdat <- cbind(bdat, bull)
   }
 }
-
+setwd("../.")
 
 green_times <- clean_times(gdat)
 all_events <- apply(green_times, 2, get_events, int=.1, maxtime=2000)
@@ -176,7 +176,7 @@ site_model <- jags(
     "lambdaP",
     "sim_tP"
   ),
-  model.file = "../scripts/JAGS_model_community.R",
+  model.file = "./scripts/JAGS_model_community.R",
   n.chains = 3,
   n.iter = 5000,
   n.burnin = 2000,
@@ -276,7 +276,7 @@ site_model <- jags(
     "lambdaP",
     "sim_tP"
   ),
-  model.file = "../scripts/JAGS_model_community.R",
+  model.file = "./scripts/JAGS_model_community.R",
   n.chains = 3,
   n.iter = 5000,
   n.burnin = 2000,

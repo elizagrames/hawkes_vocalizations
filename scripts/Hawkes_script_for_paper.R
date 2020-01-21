@@ -190,7 +190,7 @@ site_model <- jags(
 )
 filename <- paste("./output/Jan10/", gsub("/", "",sites[s]), ".RData", sep="")
 save(site_model, file = filename)
-rm(t, history, maxmem, memories.plus, currentdiffs, memories, site_model)
+#rm(t, history, maxmem, memories.plus, currentdiffs, memories, site_model)
   }
 
   # changed to .0001 per simulation and Congdon (2014)

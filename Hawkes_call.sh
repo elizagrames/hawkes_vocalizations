@@ -6,7 +6,7 @@
 #SBATCH --partition=general
 #SBATCH --qos=general
 #SBATCH --mail-type=END
-#SBATCH --mem=50G
+#SBATCH --mem=250G
 #SBATCH --mail-user=eliza.grames@uconn.edu
 #SBATCH -o myscript_%j.out
 #SBATCH -e myscript_%j.err
